@@ -1,149 +1,214 @@
 <html>
+    <head>
+        <script src="metrics.js"></script>
+        <script>
+            window.onload = function()
+            {
+                nextElement = parseInt(localStorage.getItem("nextElement")) || 0;
+                maybyTimer = parseInt(localStorage.getItem("timer"))
+                if(!isNaN(maybyTimer))
+                {
+                    timer = maybyTimer;
+                    for(i in progression)
+                    {
+                        if(timer >= i)
+                        {
+                            progression[i]();
+                        }
+                    }
+                }
+
+                var elements = JSON.parse(localStorage.getItem("elements")) || [];
+                
+                for(var i=0; i<elements.length; i++)
+                {
+                    var element = elements[i];
+                    var tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = element.nodeHTML;
+                    element.node = tempDiv.firstChild;
+                    element.node.onclick = getClickFn(element)
+                    addElement(element);
+                }
+            }
+
+            function getClickFn(element)
+            {
+                return function(e)
+                {
+                    showMessage = false;
+                    clickFunctions[element.clickFn].fn(e, element);
+                }
+            }
+
+            var elements = [];
+            var showMessage = true;
+            var timer = 0;
+            var nextElement = 0;
+
+            //update
+            setInterval(function()
+            {
+                timer += 1;
+                for(i in progression)
+                {
+                    if(timer == i)
+                    {
+                        progression[i]();
+                        break;
+                    }
+                }
+            
+                for(var i=0; i<elements.length; i++)
+                {
+                    var element = elements[i];
+                    element.updateCountdown -= 1;
+                    if(element.updateCountdown*incrementSpeedModifier <= 0)
+                    {
+                        element.updateCountdown = element.updateSpeed;
+                        element.node.innerHTML = parseInt(element.node.innerHTML)+element.increment;
+                        element.nodeHTML = element.node.outerHTML;
+                    }
+                }
+
+                nextElement -=1;
+                if(nextElement <= 0)
+                {
+                    nextElement = randInt(newNumber.min, newNumber.max);
+                    addElement(createElement());
+                }
+
+
+            }, 1000);
+
+            setInterval(function(){
+                localStorage.setItem("elements", JSON.stringify(elements));
+                localStorage.setItem("timer", timer);
+                localStorage.setItem("nextElement", nextElement);
+            }, 1000);
+            
+            function createElement()
+            {
+                node = document.createElement("div")
+                node.className = "number";
+                node.innerHTML = 0;
+                node.style.top = randInt(0, document.body.offsetHeight) + "px";
+                node.style.left = randInt(0, document.body.offsetWidth) + "px";
+                if(randInt(1,10) == 1)
+                {
+                    node.style.color = randElement(colors);
+                }
+                if(randInt(1,10) == 1)
+                {
+                    node.style.fontSize = randInt(15,45);
+                }
+    
+                var element = {
+                    node: node,
+                    nodeHTML: node.outerHTML,
+                    increment: randInt(increment.min,increment.max),
+                    updateSpeed: randInt(updateSpeed.min,updateSpeed.max),
+                    rotateBy: randInt(rotateCloseToFull.min,rotateCloseToFull.max)
+                };
+                element.updateCountdown= element.updateSpeed;
+
+                var fn = weightedWithin(clickFunctions);
+                element.clickFn = fn.name;
+                element.node.onclick = function(e){
+                    showMessage = false;
+                    fn.fn(e, element);
+                }
+                return element;
+            }
+
+            function addElement(element)
+            {
+                document.body.append(element.node);
+                elements.push(element);
+            }
+    
+            function tryPressNumber()
+            {
+                var node = document.createElement("div")
+                node.className = "pressMsg";
+                node.style.opacity = 0;
+                node.innerText = "Why don't you try pressing a number?";
+                document.body.append(node);
+                var goUp = true;
+    
+                var interval = setInterval(function(){
+                    if(goUp)
+                    {
+                        var opacity = node.style.opacity;
+                        node.style.opacity = parseFloat(opacity)+pressMsgSpeed;
+                        if(opacity >= 1)
+                        {
+                            goUp = false;
+                        }
+                    }
+                    else
+                    {
+                        var opacity = node.style.opacity;
+                        node.style.opacity = parseFloat(opacity)-pressMsgSpeed;
+                        if(opacity <= 0)
+                        {
+                            clearInterval(interval);
+                            node.remove();
+                        }
+                    }
+                }, 100);
+            }
+    
+            function randInt(min,max)
+            {
+                return Math.floor(Math.random()*(max-min))+min;
+            }
+            function randElement(arr)
+            {
+                return arr[randInt(0,arr.length-1)];
+            }
+            function rotateBy(e,deg)
+            {
+                var transform = e.style.transform;
+                if(transform == "")
+                    var currentAngle = 0;
+                else
+                    var currentAngle = parseInt( transform.split("rotate(")[1].split("deg")[0] );
+                    
+                e.style.transform = "rotate(" + (currentAngle+deg) + "deg)"
+            }
+            function weightedWithin(src){
+                var items = [];
+                var weights = [];
+                for(var i in src)
+                {
+                    items.push(src[i]);
+                    weights.push(src[i].weight);
+                }
+                return weighted(items, weights);
+            }
+        
+            function weighted(a,b,c){if(a.length!==b.length)throw new RangeError("Chance: length of array and weights must match");for(var d,e=0,f=0;f<b.length;++f)d=b[f],d>0&&(e+=d);if(0===e)throw new RangeError("Chance: no valid entries in array weights");var g,h=Math.random()*e,i=0,j=-1;for(f=0;f<b.length;++f){if(d=b[f],i+=d,d>0){if(i>=h){g=f;break}j=f}f===b.length-1&&(g=j)}var k=a[g];return c="undefined"==typeof c?!1:c,c&&(a.splice(g,1),b.splice(g,1)),k}
+        </script>
+    
+        <style>
+            body{
+                height: 100%;
+                font-size: 30px;
+                overflow: hidden;
+            }
+    
+            .number{
+                position: fixed;
+                user-select: none;
+                cursor: pointer;
+            }
+    
+            .pressMsg{
+                text-align: center;
+            }
+        </style>
+    </head>
     <body>
     </body>
 
-    <script src="metrics.js"></script>
-    <script>
-        var showMessage = true;
-        var timer = 0;
-        var interval = setInterval(function()
-        {
-            timer += 1;
-            for(i in progression)
-            {
-                if(timer == i)
-                {
-                    progression[i]();
-                    if(timer >= 15)
-                        clearInterval(interval);;
-                    break;
-                }
-            }
-        }, 1000);
-        
-        function updateElement(element)
-        {
-            element.node.innerHTML = parseInt(element.node.innerHTML)+element.increment;
-            setTimeout(function(){
-                updateElement(element);
-            },element.updateSpeed * incrementSpeedModifier);
-        }
-
-        function addElement()
-        {
-            node = document.createElement("div")
-            node.className = "number";
-            node.innerHTML = 0;
-            node.style.top = randInt(0, document.body.offsetHeight) + "px";
-            node.style.left = randInt(0, document.body.offsetWidth) + "px";
-            if(randInt(1,10) == 1)
-            {
-                node.style.color = randElement(colors);
-            }
-            if(randInt(1,10) == 1)
-            {
-                node.style.fontSize = randInt(15,45);
-            }
-            document.body.append(node);
-
-            var element = {
-                node: node,
-                increment: randInt(increment.min,increment.max),
-                updateSpeed: randInt(updateSpeed.min,updateSpeed.max),
-                rotateBy: randInt(rotateCloseToFull.min,rotateCloseToFull.max)
-            };
-            var fn = weightedWithin(clickFunctions).fn;
-            element.node.onclick = function(e){
-                showMessage = false;
-                fn(e, element);
-            }
-            console.log(rotateCloseToFull.min,rotateCloseToFull.max, element.rotateBy);
-            updateElement(element);
-
-            setTimeout(function(){
-                addElement();
-            },randInt(newNumber.min,newNumber.max));
-        }
-
-        function tryPressNumber()
-        {
-            var node = document.createElement("div")
-            node.className = "pressMsg";
-            node.style.opacity = 0;
-            node.innerText = "Why don't you try pressing a number?";
-            document.body.append(node);
-            var goUp = true;
-
-            var interval = setInterval(function(){
-                if(goUp)
-                {
-                    var opacity = node.style.opacity;
-                    node.style.opacity = parseFloat(opacity)+pressMsgSpeed;
-                    if(opacity >= 1)
-                    {
-                        goUp = false;
-                    }
-                }
-                else
-                {
-                    var opacity = node.style.opacity;
-                    node.style.opacity = parseFloat(opacity)-pressMsgSpeed;
-                    if(opacity <= 0)
-                    {
-                        clearInterval(interval);
-                        node.remove();
-                    }
-                }
-            }, 100);
-        }
-
-        function randInt(min,max)
-        {
-            return Math.floor(Math.random()*(max-min))+min;
-        }
-        function randElement(arr)
-        {
-            return arr[randInt(0,arr.length-1)];
-        }
-        function rotateBy(e,deg)
-        {
-            var transform = e.style.transform;
-            if(transform == "")
-                var currentAngle = 0;
-            else
-                var currentAngle = parseInt( transform.split("rotate(")[1].split("deg")[0] );
-                
-            e.style.transform = "rotate(" + (currentAngle+deg) + "deg)"
-        }
-        function weightedWithin(src){
-            var items = [];
-            var weights = [];
-            for(var i in src)
-            {
-                items.push(src[i]);
-                weights.push(src[i].weight);
-            }
-            return weighted(items, weights);
-        }
-        function weighted(a,b,c){if(a.length!==b.length)throw new RangeError("Chance: length of array and weights must match");for(var d,e=0,f=0;f<b.length;++f)d=b[f],d>0&&(e+=d);if(0===e)throw new RangeError("Chance: no valid entries in array weights");var g,h=Math.random()*e,i=0,j=-1;for(f=0;f<b.length;++f){if(d=b[f],i+=d,d>0){if(i>=h){g=f;break}j=f}f===b.length-1&&(g=j)}var k=a[g];return c="undefined"==typeof c?!1:c,c&&(a.splice(g,1),b.splice(g,1)),k}
-        addElement();
-    </script>
-
-    <style>
-        body{
-            height: 100%;
-            font-size: 30px;
-            overflow: hidden;
-        }
-
-        .number{
-            position: fixed;
-            user-select: none;
-            cursor: pointer;
-        }
-
-        .pressMsg{
-            text-align: center;
-        }
-    </style>
 </html>
