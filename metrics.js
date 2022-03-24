@@ -17,7 +17,7 @@ var progression = {
     5: function(){
         incrementSpeedModifier= 0.75,
         newNumber= {min: 20,max: 30}
-        if(showMessage)
+        if(showClickMessage)
         {
             tryPressNumber();
         }
@@ -35,15 +35,15 @@ var progression = {
 };
 
 var clickFunctions = {
-    rotateQuarter: {name: "rotateQuarter", weight: 1, fn: function(e, element){
+    rotateQuarter: {name: "rotateQuarter", weight: 1, fn: function(e, item){
         rotateBy(e.target, 45);
     }},
-    rotateConstant: {name: "rotateConstant", weight: 1, fn: function(e, element){
+    rotateConstant: {name: "rotateConstant", weight: 1, fn: function(e, item){
         setInterval(function(){
             rotateBy(e.target, 1);
         }, 1);
     }},
-    spin: {name: "spin", weight: 1, fn: function(e, element){
+    spin: {name: "spin", weight: 1, fn: function(e, item){
         var i = 0;
         var interval = setInterval(function(){
             i++
@@ -52,37 +52,37 @@ var clickFunctions = {
                 clearInterval(interval);
         }, 1);
     }},
-    spinAlmost: {name: "spinAlmost", weight: 1, fn: function(e, element){
+    spinAlmost: {name: "spinAlmost", weight: 1, fn: function(e, item){
         var i = 0;
         var interval = setInterval(function(){
             i++
             rotateBy(e.target, 1);
-            if(i == element.rotateBy)
+            if(i == item.rotateBy)
                 clearInterval(interval);
         }, 1);
     }},
-    biggerFont: {name: "biggerFont", weight: 1, fn: function(e, element){
+    biggerFont: {name: "biggerFont", weight: 1, fn: function(e, item){
         var oldSize = window.getComputedStyle(e.target, null).getPropertyValue('font-size').split("px")[0]
         
         e.target.style.fontSize = (parseInt(oldSize) + 1) + "px";
     }},
-    smallerFont: {name: "smallerFont", weight: 1, fn: function(e, element){
+    smallerFont: {name: "smallerFont", weight: 1, fn: function(e, item){
         var oldSize = window.getComputedStyle(e.target, null).getPropertyValue('font-size').split("px")[0]
         
         e.target.style.fontSize = (parseInt(oldSize) - 1) + "px";
     }},
-    moveRight: {name: "moveRight", weight: 1, fn: function(e, element){
+    moveRight: {name: "moveRight", weight: 1, fn: function(e, item){
         var oldLeft = e.target.style.left.split("px")[0];
         e.target.style.left = (parseInt(oldLeft) + 10) + "px";
     }},
-    moveLeft: {name: "moveLeft", weight: 1, fn: function(e, element){
+    moveLeft: {name: "moveLeft", weight: 1, fn: function(e, item){
         var oldLeft = e.target.style.left.split("px")[0];
         e.target.style.left = (parseInt(oldLeft) - 10) + "px";
     }},
-    remove: {name: "remove", weight: 0, fn: function(e, element){
+    remove: {name: "remove", weight: 0, fn: function(e, item){
         e.target.remove()
     }},
-    nothing: {name: "nothing", weight: 0, fn: function(e, element){
+    nothing: {name: "nothing", weight: 0, fn: function(e, item){
     }},
 };
 

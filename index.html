@@ -2,9 +2,18 @@
     <head>
         <script src="metrics.js"></script>
         <script>
+            var items = [];
+            var showClickMessage = true;
+            var timer = 0;
+            var nextItem = 0;
+
+            //init
             window.onload = function()
             {
-                nextElement = parseInt(localStorage.getItem("nextElement")) || 0;
+                nextItem = parseInt(localStorage.getItem("nextItem")) || 0;
+                showClickMessage = JSON.parse(localStorage.getItem("showClickMessage"));
+                if(showClickMessage == null)
+                    showClickMessage = true;
                 maybyTimer = parseInt(localStorage.getItem("timer"))
                 if(!isNaN(maybyTimer))
                 {
@@ -18,32 +27,20 @@
                     }
                 }
 
-                var elements = JSON.parse(localStorage.getItem("elements")) || [];
+                var items = JSON.parse(localStorage.getItem("items")) || [];
                 
-                for(var i=0; i<elements.length; i++)
+                for(var i=0; i<items.length; i++)
                 {
-                    var element = elements[i];
+                    var item = items[i];
                     var tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = element.nodeHTML;
-                    element.node = tempDiv.firstChild;
-                    element.node.onclick = getClickFn(element)
-                    addElement(element);
+                    tempDiv.innerHTML = item.nodeHTML;
+                    item.node = tempDiv.firstChild;
+
+                    item.node.onclick = getClickFn(item)
+                    addItem(item);
                 }
             }
 
-            function getClickFn(element)
-            {
-                return function(e)
-                {
-                    showMessage = false;
-                    clickFunctions[element.clickFn].fn(e, element);
-                }
-            }
-
-            var elements = [];
-            var showMessage = true;
-            var timer = 0;
-            var nextElement = 0;
 
             //update
             setInterval(function()
@@ -58,35 +55,35 @@
                     }
                 }
             
-                for(var i=0; i<elements.length; i++)
+                for(var i=0; i<items.length; i++)
                 {
-                    var element = elements[i];
-                    element.updateCountdown -= 1;
-                    if(element.updateCountdown*incrementSpeedModifier <= 0)
+                    var item = items[i];
+                    item.updateCountdown -= 1;
+                    if(item.updateCountdown*incrementSpeedModifier <= 0)
                     {
-                        element.updateCountdown = element.updateSpeed;
-                        element.node.innerHTML = parseInt(element.node.innerHTML)+element.increment;
-                        element.nodeHTML = element.node.outerHTML;
+                        item.updateCountdown = item.updateSpeed;
+                        item.node.innerHTML = parseInt(item.node.innerHTML)+item.increment;
+                        item.nodeHTML = item.node.outerHTML;
                     }
                 }
 
-                nextElement -=1;
-                if(nextElement <= 0)
+                if(nextItem <= 0)
                 {
-                    nextElement = randInt(newNumber.min, newNumber.max);
-                    addElement(createElement());
+                    nextItem = randInt(newNumber.min, newNumber.max);
+                    addItem(createItem());
                 }
-
-
+                nextItem -= 1;
             }, 1000);
 
+            //save
             setInterval(function(){
-                localStorage.setItem("elements", JSON.stringify(elements));
+                localStorage.setItem("items", JSON.stringify(items));
                 localStorage.setItem("timer", timer);
-                localStorage.setItem("nextElement", nextElement);
+                localStorage.setItem("nextItem", nextItem);
+                localStorage.setItem("showClickMessage", showClickMessage);
             }, 1000);
             
-            function createElement()
+            function createItem()
             {
                 node = document.createElement("div")
                 node.className = "number";
@@ -95,39 +92,47 @@
                 node.style.left = randInt(0, document.body.offsetWidth) + "px";
                 if(randInt(1,10) == 1)
                 {
-                    node.style.color = randElement(colors);
+                    node.style.color = randItem(colors);
                 }
                 if(randInt(1,10) == 1)
                 {
                     node.style.fontSize = randInt(15,45);
                 }
     
-                var element = {
+                var item = {
                     node: node,
                     nodeHTML: node.outerHTML,
                     increment: randInt(increment.min,increment.max),
                     updateSpeed: randInt(updateSpeed.min,updateSpeed.max),
                     rotateBy: randInt(rotateCloseToFull.min,rotateCloseToFull.max)
                 };
-                element.updateCountdown= element.updateSpeed;
+                item.updateCountdown = item.updateSpeed;
 
                 var fn = weightedWithin(clickFunctions);
-                element.clickFn = fn.name;
-                element.node.onclick = function(e){
-                    showMessage = false;
-                    fn.fn(e, element);
-                }
-                return element;
+                item.clickFn = fn.name;
+                item.node.onclick = getClickFn(item);
+
+                return item;
             }
 
-            function addElement(element)
+            function addItem(item)
             {
-                document.body.append(element.node);
-                elements.push(element);
+                document.body.append(item.node);
+                items.push(item);
+            }
+
+            function getClickFn(item)
+            {
+                return function(e)
+                {
+                    showClickMessage = false;
+                    clickFunctions[item.clickFn].fn(e, item);
+                }
             }
     
             function tryPressNumber()
             {
+                showClickMessage = false;
                 var node = document.createElement("div")
                 node.className = "pressMsg";
                 node.style.opacity = 0;
@@ -157,12 +162,18 @@
                     }
                 }, 100);
             }
+            
+            function reset()
+            {
+                localStorage.clear();
+                location.reload()
+            }
     
             function randInt(min,max)
             {
                 return Math.floor(Math.random()*(max-min))+min;
             }
-            function randElement(arr)
+            function randItem(arr)
             {
                 return arr[randInt(0,arr.length-1)];
             }
